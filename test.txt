@@ -1,0 +1,38 @@
+magic: 0x12345678
+major: 0x00000001
+minor: 0x00000000
+pool:
+    #0: string: "Hello, World!"
+    #1: reference: #2.#5 //std.io.println
+    #2: reference: #3.#4
+    #3: identifier: std
+    #4: identifier: io
+    #5: identifier: println
+    #6: reference: #7
+    #7: identifier: test
+    #8: reference: #9
+    #9: identifier main
+libraries:
+    std: _GLOBAL.std //import "_GLOBAL" from std as std
+
+defines:
+    function main(string[] args):
+        args: 1
+        length: 4
+        code: 
+                invokereference #6
+                invokereference #1
+                null
+                ret
+    function test():
+        args: 0
+        length: 2
+        code:
+                cload_0
+                ret
+
+init:
+    length: 2
+    code:
+        args
+        invokereference #9
