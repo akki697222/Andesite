@@ -1,5 +1,5 @@
-# Andesite Opcodes
-- [Andesite Opcodes](#andesite-opcodes)
+# Andesite VM Opcodes
+- [Andesite VM Opcodes](#andesite-vm-opcodes)
   - [General](#general)
   - [References](#references)
   - [Constant Pools](#constant-pools)
@@ -29,21 +29,23 @@
 4. `print` print stack top value to stdout
 5. `exit` stop execution and exit
 6. `args` get arguments with string[]
-7. `newthread` (constant pool index: i32) create and start a new thread with the specified function
+7. `newthread` (constant pool index: i16) create and start a new thread with the specified function
 8. `rnewthread` create and start a new thread with the specified function from stack top
+9. `gload` (index: i32) get value from global and push to stack
+10. `gstore` (index: i32) set specified global to stack value
 
 ## References
 1. `null` load null to stack
-2. `getfield` (constant pool index: i32) get specified instance field and push to stack
-3. `setfield` (constant pool index: i32) set specified instance field to stack value
-4. `getstatic` (constant pool index: i32) get specified static class field and push to stack
-5. `setstatic` (constant pool index: i32) set specified class static field to stack value
-6. `invoke`  (constant pool index: i32) invoke function from constant pool
-7. `invokevirtual` (constant pool index: i32) invoke classmethod from constant pool
-8. `invokereference` (constant pool index: i32) invoke method/function reference from constant pool
-9. `invokestatic` (constant pool index: i32) invoke a static method from constant pool
-10. `invokeinterface` (constant pool index: i32) invoke an interface method from an object reference on stack
-11.  `cast` (constant pool index: i32) check object and cast to specified object 
+2. `getfield` (constant pool index: i16) get specified instance field and push to stack
+3. `setfield` (constant pool index: i16) set specified instance field to stack value
+4. `getstatic` (constant pool index: i16) get specified static class field and push to stack
+5. `setstatic` (constant pool index: i16) set specified class static field to stack value
+6. `invoke`  (constant pool index: i16) invoke function from constant pool
+7. `invokevirtual` (constant pool index: i16) invoke classmethod from constant pool
+8. `invokereference` (constant pool index: i16) invoke method/function reference from constant pool
+9. `invokestatic` (constant pool index: i16) invoke a static method from constant pool
+10. `invokeinterface` (constant pool index: i16) invoke an interface method from an object reference on stack
+11.  `cast` (constant pool index: i16) check object and cast to specified object 
 12.  `ret` return to caller and push returned value to stack 
 
 ## Constant Pools
@@ -347,11 +349,11 @@ a > b => 1
 44. `shru64` shift right 64-bit unsigned integer from stack and push result
 
 ## Object Creation
-1. `new` (constant pool index: i32) create a new object instance of the specified class and push to stack
+1. `new` (constant pool index: i16) create a new object instance of the specified class and push to stack
 
 ## Exception Handling
 1. `throw` throw an exception from the stack top
-2. `catch` (constant pool index: i32, address: i32) catch an exception of the specified type and jump to the specified address
+2. `catch` (constant pool index: i16, address: i32) catch an exception of the specified type and jump to the specified address
 
 ## Function Definition
 1. `defun` (address: i32, nargs: i32) define a new function starting at the specified address with the given number of arguments, push the function object to stack
