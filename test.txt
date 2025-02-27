@@ -3,7 +3,8 @@ major: 0x00000001
 minor: 0x00000000
 pool:
     #1: string: "Hello, World!"
-    #2: reference: #3.#6 //std.io.println
+    #2: reference: #3.#6 
+    ; std.io.println
     #3: reference: #4.#5
     #4: identifier: std
     #5: identifier: io
@@ -15,7 +16,8 @@ pool:
     #11: type: #12
     #12: identifier: string[]
 imports:
-    std: _GLOBAL.std //import "_GLOBAL" from std as std
+    std: _GLOBAL.std 
+    ; import "_GLOBAL" from std as std
 
 defines:
     function #10(#11):
