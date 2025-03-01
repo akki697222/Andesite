@@ -1,10 +1,7 @@
-#ifndef ANDESITE_OPCODES
-#define ANDESITE_OPCODES
+#pragma once
 
 #include "cstdint"
 #include "stack.hpp"
-
-
 
 enum class Opcode : uint16_t {
     nop = 0x0000,
@@ -12,7 +9,7 @@ enum class Opcode : uint16_t {
     upush = 0x0002,
     fpush = 0x0003,
     ppush = 0x0004, //pointer
-    cpush = 0x0005, //constant pool
+    spush = 0x0005,
     pop = 0x0006,
     dup = 0x0007,
     pcall = 0x0008,
@@ -45,6 +42,8 @@ enum class Opcode : uint16_t {
     umul = 0x0023,
     udiv = 0x0024,
     umod = 0x0025,
+    exit = 0x0026,
+    native = 0x0027,
 };
 
 struct Instruction {
@@ -55,5 +54,3 @@ struct Instruction {
 
         explicit Instruction(Opcode op, StackElement value): op(op), value(value) {}
 };
-
-#endif

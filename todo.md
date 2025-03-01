@@ -5,13 +5,14 @@
 + [ ] CraftScriptのパーサーを作成する
   + [ ] パースしたASTからバイトコードを生成する
 + [ ] VM本体を作る
-  + [ ] 簡単な実装を行い、試験をする
+  + [x] 簡単な実装を行い、試験をする
     + [ ] とりあえずtest.andesiteを実行できるようにする
-  + [ ] スタックの仕組みを作る
-    + [ ] スタックの値を管理する方法を決める(struct VS class VS reference)
+  + [x] スタックの仕組みを作る
+    + [x] スタックの値を管理する方法を決める(struct VS class VS reference)
   + [ ] メモリ管理を実装する
   + [ ] デバッガーを実装する
   + [x] opcodesを定義
+  + [ ] スタックで扱える値にstd::stringを追加し文字列関連のopcodesも追加
 
 ## Others
 

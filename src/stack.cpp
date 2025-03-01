@@ -1,5 +1,6 @@
 #include "stack.hpp"
 #include "stdexcept"
+#include "vm.hpp"
 
 std::deque<StackElement> Stack::getAll() const {
     return elements;
@@ -22,7 +23,7 @@ void Stack::remove() {
 }
 
 void Stack::push(const StackElement& element) {
-    if (elements.size() > 65535) throw std::overflow_error("Stack overflow. (Max. 65535)");
+    if (elements.size() > VM_MAX_STACK_SIZE) throw std::overflow_error("Stack overflow. (Max. 65535)");
     elements.push_front(element);
 }
 

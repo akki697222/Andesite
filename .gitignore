@@ -13,5 +13,6 @@ _deps
 /out
 /.vscode
 /.idea
+/libs
 *.exe
 *.o

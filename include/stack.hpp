@@ -1,14 +1,17 @@
+#pragma once
+
 #include <cstdint>
 #include <variant>
 #include <deque>
-
-#ifndef ANDESITE_STACK
-#define ANDESITE_STACK
+#include <unordered_map>
+#include <string>
 
 using StackElement = std::variant<
-    uint64_t, int64_t, double,
-    uint64_t*, int64_t*, double*
+    uint64_t, int64_t, double, std::string,
+    uint64_t*, int64_t*, double*, std::string*
 >;
+
+static const StackElement STACK_ELEMENT_ZERO = 0;
 
 class Stack {
     public:
@@ -22,6 +25,5 @@ class Stack {
         void swap();
     private:
         std::deque<StackElement> elements;
+        uint32_t maxsize;
 };
-
-#endif

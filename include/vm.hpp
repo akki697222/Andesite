@@ -1,10 +1,16 @@
+#pragma once
+
+#define VM_DEFAULT_CALLSTACK_SIZE 128
+#define VM_WIDE_CALLSTACK_SIZE 1024
+#define VM_MAX_STACK_SIZE 65535
+#define VM_MAX_CALLFRAME_STACK_SIZE 8192
+
 #include "vector"
 #include "stack.hpp"
 #include "opcodes.hpp"
 #include "cstdint"
-
-#ifndef ANDESITE_VM
-#define ANDESITE_VM
+#include "memory"
+#include "deque"
 
 enum class VM_State : uint8_t
 {
@@ -13,6 +19,17 @@ enum class VM_State : uint8_t
     RUNNING = 0x03,
     EXITED = 0x04,
     ERROR = 0xFF,
+};
+
+struct VM_CallFrame {
+    uint64_t return_address;
+    Stack stack = Stack();
+};
+
+enum VM_Flags : uint16_t{
+    VM_WideCallStack = 1 << 0,
+    VM_Debug = 1 << 1,
+    VM_NativeTypeNameInDebugOutput = 1 << 2,
 };
 
 struct VM_Info
@@ -42,16 +59,24 @@ public:
 class VM
 {
 public:
-    VM(std::vector<Instruction> &instructions) : instructions(instructions)
+    VM(std::vector<Instruction> &instructions, uint16_t flags) : instructions(instructions), flags(flags)
     {
         state = VM_State::STANDBY;
+        if (flags & VM_WideCallStack) {
+            callstack.resize(1024);
+        } else {
+            callstack.resize(VM_DEFAULT_CALLSTACK_SIZE);
+        }
     }
 
     int execute();
     VM_Info step();
-    void printStatus();
+    void printStack(const Stack &s);
+    void printInfo(const VM_Info &info);
     void suspend();
     void resume(); 
+    void switchToCallFrame(VM_CallFrame& frame);
+    void switchToMainStack();
     size_t getMemoryUsage() const {
         return sizeof(*this);
     }
@@ -59,7 +84,8 @@ private:
     int pc = 0;
     VM_State state;
     std::vector<Instruction> instructions;
-    Stack stack = Stack();
+    std::vector<VM_CallFrame> callstack;
+    Stack main = Stack();
+    Stack stack = main;
+    uint16_t flags;
 };
-
-#endif

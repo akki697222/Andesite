@@ -13,6 +13,41 @@ T getValue(const StackElement &stackElement)
     return std::get<T>(stackElement);
 }
 
+std::string getTypeName(const std::type_info& type, bool useNativeName) {
+    std::unordered_map<std::string, std::string> se;
+
+    if (useNativeName) {
+        se = {
+            {typeid(uint64_t).name(), "uint64_t"},
+            {typeid(int64_t).name(), "int64_t"},
+            {typeid(double).name(), "double"},
+            {typeid(std::string).name(), "std::string"},
+            {typeid(uint64_t*).name(), "uint64_t*"},
+            {typeid(int64_t*).name(), "int64_t*"},
+            {typeid(double*).name(), "double*"},
+            {typeid(std::string*).name(), "std::string*"},
+        };
+    } else {
+        se = {
+            {typeid(uint64_t).name(), "long"},
+            {typeid(int64_t).name(), "int"},
+            {typeid(double).name(), "double"},
+            {typeid(std::string).name(), "string"},
+            {typeid(uint64_t*).name(), "Pointer of long"},
+            {typeid(int64_t*).name(), "Pointer of int"},
+            {typeid(double*).name(), "Pointer of double"},
+            {typeid(std::string).name(), "Pointer of string"},
+        };
+    }
+
+    auto it = se.find(type.name());
+    if (it != se.end()) {
+        return it->second;
+    } else {
+        return std::string("UnknownType(") + type.name() + ")";
+    }
+}
+
 template <typename T>
 class BinaryOperator
 {
@@ -69,12 +104,25 @@ public:
     }
 };
 
+void VM::switchToCallFrame(VM_CallFrame &frame)
+{
+    this->stack = frame.stack;
+}
+
+void VM::switchToMainStack()
+{
+    this->stack = this->main;
+}
+
 VM_Info VM::step()
 {
     state = VM_State::RUNNING;
     Instruction operation = instructions[pc];
 
-    if (pc > instructions.size())
+    VM_State initialState = VM_State::STANDBY;
+    bool isJump = false;
+
+    if (pc >= instructions.size())
     {
         state = VM_State::EXITED;
     }
@@ -95,6 +143,11 @@ VM_Info VM::step()
         case Opcode::fpush:
         {
             stack.push(std::get<double>(operation.value));
+            break;
+        }
+        case Opcode::spush:
+        {
+            stack.push(std::get<std::string>(operation.value));
             break;
         }
         case Opcode::iadd:
@@ -167,10 +220,64 @@ VM_Info VM::step()
             stack.push(BinaryOperator<double>::div(stack.pop(), stack.pop()));
             break;
         }
+        case Opcode::exit:
+        {
+            initialState = VM_State::EXITED;
+            break;
         }
-        pc++;
+        case Opcode::call:
+        {
+            uint64_t target_address = std::get<uint64_t>(operation.value);
+            VM_CallFrame frame;
+            frame.return_address = pc + 1;
 
-        state = VM_State::STANDBY;
+            uint64_t argCount = std::get<uint64_t>(stack.pop()); 
+
+            for (uint64_t i = 0; i < argCount; ++i)
+            {
+                frame.stack.push(stack.pop());
+            }
+
+            callstack.push_back(std::move(frame));
+            switchToCallFrame(callstack.back());
+            pc = target_address;
+            isJump = true;
+            break;
+        }
+        case Opcode::ret:
+        {
+            if (callstack.empty())
+            {
+                std::cerr << "empty callstack" << std::endl;
+                initialState = VM_State::ERROR;
+            }
+            else
+            {
+                pc = callstack.back().return_address;
+                StackElement e;
+                if (stack.getAll().size() > 0)
+                {
+                    e = stack.pop();
+                    switchToMainStack();
+                    stack.push(e);
+                }
+                else
+                {
+                    switchToMainStack();
+                }
+                callstack.pop_back();
+                isJump = true;
+            }
+            break;
+        }
+        }
+
+        if (!isJump)
+        {
+            pc++;
+        }
+
+        state = initialState;
     }
 
     return VM_Info(
@@ -182,23 +289,41 @@ VM_Info VM::step()
         0);
 }
 
-void VM::suspend() {
+void VM::suspend()
+{
     state = VM_State::SUSPENDED;
-#ifdef ANDESITE_VM_DEBUG
-    printStatus();
-#endif
 }
 
-void VM::resume() {
-    state == VM_State::STANDBY;
+void VM::resume()
+{
+    state = VM_State::STANDBY;
 #ifdef ANDESITE_VM_DEBUG
     std::cout << "VM Resumed." << std::endl;
 #endif
 }
 
-void VM::printStatus() {
-    std::deque<StackElement> e = stack.getAll();
-    std::cout << "Current Stack:" << std::endl;
+std::string getNameFromStatus(VM_State status)
+{
+    switch (status)
+    {
+    case VM_State::STANDBY:
+        return "Stand-by";
+    case VM_State::RUNNING:
+        return "Running";
+    case VM_State::SUSPENDED:
+        return "Suspended";
+    case VM_State::EXITED:
+        return "Exited";
+    case VM_State::ERROR:
+        return "Error";
+    }
+    return "Unknown";
+}
+
+void VM::printStack(const Stack &s)
+{
+    std::deque<StackElement> e = s.getAll();
+    std::cout << "Stack:" << std::endl;
     for (size_t i = 0; i < e.size(); i++)
     {
         std::cout << "stack#" << i << ": ";
@@ -210,10 +335,26 @@ void VM::printStatus() {
                 std::cout << static_cast<void*>(val);
             } else {
                 std::cout << val;
-            } }, e[i]);
+            } 
+        }, e[i]);
+
+        std::visit([this](auto&& val) {
+            using T = std::decay_t<decltype(val)>;
+            std::cout << " (" << getTypeName(typeid(T), flags & VM_NativeTypeNameInDebugOutput) << ")";;
+        }, e[i]);
 
         std::cout << std::endl;
     }
+}
+
+void VM::printInfo(const VM_Info &info)
+{
+    VM::printStack(info.stack);
+
+    std::cout << "Program Counter: " << info.program_counter << std::endl;
+    std::cout << "Status: " << getNameFromStatus(info.current_status) << std::endl;
+    std::cout << "Used Physical Memory(MB): " << (info.used_physical_memory / 1024) << std::endl;
+    std::cout << std::endl;
 }
 
 int VM::execute()
@@ -222,14 +363,19 @@ int VM::execute()
 
     while (state != VM_State::ERROR && state != VM_State::EXITED)
     {
-        if (state == VM_State::STANDBY) {
-            VM_Info info = step();
+        if (state == VM_State::STANDBY)
+        {
+#ifdef ANDESITE_VM_DEBUG
+            printInfo(step());
+#else
+            step();
+#endif
         }
     }
 
 #ifdef ANDESITE_VM_DEBUG
     std::cout << "Execution Ended." << std::endl;
-    printStatus();
+    printStack(stack);
 #endif
 
     return 0;
